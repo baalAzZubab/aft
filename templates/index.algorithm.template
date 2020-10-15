@@ -1,0 +1,7 @@
+<div>
+<h2>IUT: {}</h2>
+<ul>
+  <li>Number of confirmed false outputs: {}</li>
+  <li>Total number of crashes produced:  {}</li>
+</ul>
+</div>
