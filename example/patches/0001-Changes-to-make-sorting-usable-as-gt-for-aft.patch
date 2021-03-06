@@ -1,0 +1,108 @@
+From 77975dae9022a6616843ea898fef5ff085054a3e Mon Sep 17 00:00:00 2001
+From: baalAzZubab <chris.assmus@gmx.de>
+Date: Mon, 26 Oct 2020 16:46:19 +0100
+Subject: [PATCH] Changes to make sorting usable as gt for aft
+
+---
+ generate/Makefile   |  8 ++++----
+ generate/oracle.cpp | 40 +++++++++++++++++++++++-----------------
+ 2 files changed, 27 insertions(+), 21 deletions(-)
+
+diff --git a/generate/Makefile b/generate/Makefile
+index 2c55283..86e4303 100644
+--- a/generate/Makefile
++++ b/generate/Makefile
+@@ -1,12 +1,12 @@
+-default: extract_benchmarks do_algos 
++default: prepare_algos do_oracle
+ 
+ gcode=../code
+ libs=../src/lib_isabelle_llvm.cpp ../src/lib_isabelle_llvm.c
+-cflags=-std=c++11 -stdlib=libstdc++ -Wall -Wno-unused-function -O3 -flto -I${HOME}/include -I$(gcode) ../src/lib_isabelle_llvm.cpp
+-# cflags=-std=c++11 -stdlib=libstdc++ -march=native -w -Wall -fexceptions -O3 -I${HOME}/include -I$(gcode) -s
++CPPFLAGS=-std=c++11 -stdlib=libstdc++ -Wall -Wno-unused-function -O3 -flto -I${HOME}/include -I$(gcode) ../src/lib_isabelle_llvm.cpp
++# CPPFLAGS=-std=c++11 -stdlib=libstdc++ -march=native -w -Wall -fexceptions -O3 -I${HOME}/include -I$(gcode) -s
+ # -mllvm -inline-threshold=100000 -flto
+ 
+-compile=clang++ $(cflags)
++compile=$(CXX) $(CPPFLAGS)
+ compile_gcc=g++ -std=c++11 -Wall -Wno-unused-function -flto -O4 -I${HOME}/include
+ 
+ sexplore: sexplore.cpp
+diff --git a/generate/oracle.cpp b/generate/oracle.cpp
+index 4cea03e..23f5235 100644
+--- a/generate/oracle.cpp
++++ b/generate/oracle.cpp
+@@ -6,12 +6,13 @@
+ #include <random>
+ #include <stdlib.h>
+ #include <vector>
++#include <fstream>
+ 
+-#include <boost/sort/common/time_measure.hpp>
+-#include <boost/sort/common/file_vector.hpp>
+-#include "boost/sort/common/int_array.hpp"
+-
+-#include <boost/sort/sort.hpp>
++// #include <boost/sort/common/time_measure.hpp>
++// #include <boost/sort/common/file_vector.hpp>
++// #include "boost/sort/common/int_array.hpp"
++// 
++// #include <boost/sort/sort.hpp>
+ 
+ #ifndef NO_LLVM
+ extern "C" {
+@@ -20,15 +21,18 @@ extern "C" {
+ #endif
+ 
+ using namespace std;
+-namespace bsort = boost::sort;
+-namespace bsc = boost::sort::common;
+-
+-using bsc::time_point;
+-using bsc::now;
+-using bsc::subtract_time;
+-using bsc::fill_vector_uint64;
+-using bsc::write_file_uint64;
+-  
++// namespace bsort = boost::sort;
++// namespace bsc = boost::sort::common;
++// 
++// using bsc::time_point;
++// using bsc::now;
++// using bsc::subtract_time;
++// using bsc::fill_vector_uint64;
++// using bsc::write_file_uint64;
++
++bool empty_file(std::ifstream& file){
++  return file.peek() == std::ifstream::traits_type::eof();
++}
+ 
+ int main(int argc, char** argv) {
+ 
+@@ -42,10 +46,11 @@ int main(int argc, char** argv) {
+   // read array from file
+   ifstream file;
+   file.open(file_name);
++  if (!file)exit(1);
+ 
+-  string tp;
+-  getline(file, tp); // skip comment line
+-
++  // string tp;
++  // getline(file, tp); // skip comment line
++  if (empty_file(file))exit(1);
+   size_t elems;
+   file >> elems;
+ 
+@@ -53,6 +58,7 @@ int main(int argc, char** argv) {
+   A.reserve(elems);
+ 
+   for(size_t i=0; i<elems; ++i) {
++    if (empty_file(file))exit(1);
+     uint64_t l;
+     file >> l;
+     A.push_back(l);
+-- 
+2.29.0
+
